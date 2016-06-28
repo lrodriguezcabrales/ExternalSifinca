@@ -1,0 +1,8 @@
+web_page_homepage:
+    path:     /
+    defaults: { _controller: WebPageBundle:Default:index }
+
+web_oportunity:
+    path: web/oportunity
+    defaults: { _controller: WebPageBundle:Default:createOportunity }
+    methods:  [GET, POST]

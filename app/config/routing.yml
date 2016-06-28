@@ -1,0 +1,7 @@
+web_page:
+    resource: "@WebPageBundle/Resources/config/routing.yml"
+    prefix:   /
+
+app:
+    resource: "@AppBundle/Controller/"
+    type:     annotation

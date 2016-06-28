@@ -1,0 +1,4 @@
+services:
+#    web_page.example:
+#        class: WebPageBundle\Example
+#        arguments: ["@service_id", "plain_value", %parameter%]
