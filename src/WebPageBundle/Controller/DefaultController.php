@@ -28,12 +28,47 @@ class DefaultController extends Controller
 
     public function createOportunityAction(){
         
-
+       // echo "ushuHS";
         $request = Request::createFromGlobals();
 
         $json = $request->getContent();
         $data = json_decode($json,true);
+        //print_r('hola que tal nuevo data');
+        ////print_r($data);
 
+        //-----------------------------------------------------------------------------------------------------
+        //separar la letra del numero del inmueble para saber de que ciudad es 
+        $string = $data['property'];
+        $dividir = explode('-',$string);
+         
+         $city = null;
+         $carta = null;
+         $monte = null;
+        foreach ($dividir as $k => $v) {
+          if (preg_match('/([a-zA-Z])([0-9]+)/',$v,$matches)) {
+            $city = $matches[1];// = Letra
+            //$matches[1]; 
+
+            $consecutive = $matches[2]; // = Numero
+
+          }
+        }
+
+
+        if(is_null($city)){
+            return new JsonResponse(array('message'=> 'Oportunidad no valida'));
+        }
+
+        if($city == 'C'){
+            $carta = ($this->server = 'http://localhost/sifinca/web/app.php/');
+            //print_r($carta);
+        }
+        if($city == 'M'){
+            $monte = ($this->server = 'http://localhost/sifinca/web/app.php/');
+            //print_r($monte);
+        }
+
+        //-------------------------------------------------------------------------------------------------
 
         //Crear oportunidad
         $url = $this->server.'crm/main/oportunity';
@@ -43,6 +78,7 @@ class DefaultController extends Controller
         $lead = $this->createLead($data);
 
         $oportunityType = $this->getOportunityType($data['oportunityType']);
+
         $meansOfContact = $this->getMeansOfContact();
         $responsable = $this->getResponsable();
 
@@ -94,7 +130,7 @@ class DefaultController extends Controller
         if(isset($result['success'])){
             if($result['success'] == true){
 
-                echo "\nEntro aqui\n";
+                //echo "\nEntro aqui1\n";
                 $sCont = $this->searchContador();
 
                 if(!is_null($sCont)){
@@ -120,19 +156,79 @@ class DefaultController extends Controller
 
                     $result2 = $api->put($bAssignment);
 
-                    print_r($result2);
+                    //print_r($result2);
 
                 }
            
+
+                 //print_r($result);
+                //aqui llamar funcion crear requerimiento
+                foreach ($result['data'] as $key => $value) {
+                    //print_r($value);
+                    $idOportunity = $value['id'];
+
+                    // echo "hola q tal";
+                    // print_r($idOportunity);
+
+                    //$lead = $this->createLead($data);
+
+                    echo "\nconsecutive: ".$consecutive;
+                    $requirement = $this->createRequirement($idOportunity,$consecutive);
+                    //echo "hasta aqui";
+                }
+
             }
         }
        
         if(is_array($result)){
+            
+            
+           
             return new JsonResponse($result);
+
         }else{
             return new Response($result);
         }
         
+    }
+
+    /**
+    Crear requerimiento de la oportunidad
+    */
+    public function createRequirement($idOportunity, $consecutive){
+
+        
+        $property = $this->searchProperty($consecutive);
+
+        if(!is_null($property)){
+
+            $properties = array();
+            $properties[] = $property;
+
+            $bRequirement = array(
+                'properties' => $properties
+            );
+
+            $url = $this->server.'crm/main/oportunity/save/requirement/'.$idOportunity;
+
+            $api = $this->SetupApi($url, $this->user, $this->pass);
+
+            $result = $api->post($bRequirement);
+
+            $result = json_decode($result, true);
+
+            
+
+            if(isset($result['success'])){
+                if($result['success'] == 1 || $result['success'] == true){
+
+                    echo "\n requirement creado\n";
+                }
+            }else{
+                print_r($result);
+            }
+
+        }
     }
 
     /**
@@ -406,6 +502,43 @@ class DefaultController extends Controller
         }
 
         return $cont;
+    }
+
+
+    public function searchProperty($consecutive)
+    {
+        
+        $property = null;
+
+        $property = $this->cleanString($consecutive);
+
+        $filter = array(
+                'value' => $property,
+                'operator' => 'equal',
+                'property' => 'consecutive'
+        );
+
+        //print_r($filter);
+
+        $filter = json_encode(array($filter));
+    
+        $url = $this->server.'catchment/main/property?filter='.$filter;
+    
+        echo "\n".$url."\n";
+
+        $api = $this->SetupApi($url, $this->user, $this->pass);
+    
+        $result = $api->get();
+        $result = json_decode($result, true);
+
+        // echo "\nOportunityType\n";
+        print_r($result);
+
+        if($result['total'] > 0){
+            $property = $result['data'][0];
+        }
+
+        return $property;
     }
 
     /**
