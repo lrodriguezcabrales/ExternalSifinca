@@ -172,7 +172,7 @@ class DefaultController extends Controller
 
                     //$lead = $this->createLead($data);
 
-                    echo "\nconsecutive: ".$consecutive;
+                    //echo "\nconsecutive: ".$consecutive;
                     $requirement = $this->createRequirement($idOportunity,$consecutive);
                     //echo "hasta aqui";
                 }
@@ -184,7 +184,8 @@ class DefaultController extends Controller
             
             
            
-            return new JsonResponse($result);
+            //return new JsonResponse($result);
+            return new JsonResponse(array());
 
         }else{
             return new Response($result);
@@ -222,10 +223,55 @@ class DefaultController extends Controller
             if(isset($result['success'])){
                 if($result['success'] == 1 || $result['success'] == true){
 
-                    echo "\n requirement creado\n";
+                    //echo "\n requirement creado\n";
+
+                    $offered = $this->createOffered($idOportunity,$consecutive);
                 }
             }else{
-                print_r($result);
+                //print_r($result);
+            }
+
+        }
+    }
+
+    /**
+    Crear ofrecido de la oportunidad
+    */
+    public function createOffered($idOportunity, $consecutive){
+
+        $property = $this->searchProperty($consecutive);
+       
+        if(!is_null($property)){
+
+            $properties = array();
+            $properties[] = $property;
+
+            $bRequirement = array(
+                'id' => $property['id']
+            );
+
+
+
+            $url = $this->server.'crm/main/oportunity/add/property/offered/'.$idOportunity;
+
+            echo "\n".$url."\n";
+            print_r(json_encode($bRequirement));
+
+            $api = $this->SetupApi($url, $this->user, $this->pass);
+
+            $result = $api->post($bRequirement);
+
+            $result = json_decode($result, true);
+
+            
+
+            if(isset($result['success'])){
+                if($result['success'] == 1 || $result['success'] == true){
+
+                    echo "\n Inmuebles ofrecido creado\n";
+                }
+            }else{
+                //print_r($result);
             }
 
         }
@@ -524,7 +570,7 @@ class DefaultController extends Controller
     
         $url = $this->server.'catchment/main/property?filter='.$filter;
     
-        echo "\n".$url."\n";
+        //echo "\n".$url."\n";
 
         $api = $this->SetupApi($url, $this->user, $this->pass);
     
@@ -532,7 +578,7 @@ class DefaultController extends Controller
         $result = json_decode($result, true);
 
         // echo "\nOportunityType\n";
-        print_r($result);
+        //print_r($result);
 
         if($result['total'] > 0){
             $property = $result['data'][0];
