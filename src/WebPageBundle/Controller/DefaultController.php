@@ -234,6 +234,9 @@ class DefaultController extends Controller
         }
     }
 
+
+
+
     /**
     Crear ofrecido de la oportunidad
     */
@@ -254,8 +257,9 @@ class DefaultController extends Controller
 
             $url = $this->server.'crm/main/oportunity/add/property/offered/'.$idOportunity;
 
-            echo "\n".$url."\n";
-            print_r(json_encode($bRequirement));
+            // echo "\n".$url."\n";
+            // print_r(json_encode($bRequirement));
+            // print_r(json_encode($bRequirement));
 
             $api = $this->SetupApi($url, $this->user, $this->pass);
 
@@ -269,6 +273,101 @@ class DefaultController extends Controller
                 if($result['success'] == 1 || $result['success'] == true){
 
                     echo "\n Inmuebles ofrecido creado\n";
+                    $comment = $this->createComment($idOportunity,$consecutive);
+
+                }
+            }else{
+                //print_r($result);
+            }
+
+        }
+    }
+
+    /**
+    Crear comentario de la oportunidad
+    */
+    public function createComment($idOportunity, $consecutive){
+
+        
+        $property = $this->searchProperty($consecutive);
+
+         if(!is_null($property)){
+
+             $properties = array();
+             $properties[] = $property;
+
+            //print_r($properties);
+
+            $bComment = array(
+               'comment' => '<p>Esta oportunidad fue creada desde: http://www.araujoysegovia.com</p>',
+               'idEntity' => $idOportunity,
+               'lastCommentDate' => 'true'
+            );
+
+            $url = $this->server.'crm/main/oportunity/comment/'.$idOportunity;
+            //print_r(json_decode($bComment));
+            //print_r(json_encode($bComment));
+
+            $api = $this->SetupApi($url, $this->user, $this->pass);
+
+            $result = $api->post($bComment);
+
+            $result = json_decode($result, true);
+            
+
+
+            
+
+            if(isset($result['success'])){
+                if($result['success'] == 1 || $result['success'] == true){
+
+                    echo "\n Comment creado\n";
+                 print_r("hola que tal 2");
+
+
+                    //$offered = $this->createOffered($idOportunity,$consecutive);
+                }
+            }else{
+                //print_r($result);
+            }
+
+        }
+    }
+    public function createParticipant($idOportunity, $consecutive){
+
+        
+        $property = $this->searchProperty($consecutive);
+
+         if(!is_null($property)){
+
+             $properties = array();
+             $properties[] = $property;
+
+            //print_r($properties);
+
+            $bParticipant = array(
+               // 'properties' => $properties
+            );
+
+            $url = $this->server.'crm/main/oportunity/comment/participant/'.$idOportunity;
+            print_r($url);
+
+            $api = $this->SetupApi($url, $this->user, $this->pass);
+
+            $result = $api->post($bParticipant);
+
+            $result = json_decode($result, true);
+
+            
+
+            if(isset($result['success'])){
+                if($result['success'] == 1 || $result['success'] == true){
+
+                    echo "\n Participant creado\n";
+                 print_r("hola que tal 3");
+
+
+                    //$offered = $this->createOffered($idOportunity,$consecutive);
                 }
             }else{
                 //print_r($result);
