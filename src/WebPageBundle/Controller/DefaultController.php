@@ -20,4 +20,5 @@ class DefaultController extends Controller
         return new JsonResponse(array('access_token'=> $t));
 
     }
+
 }

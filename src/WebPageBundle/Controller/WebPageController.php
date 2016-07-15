@@ -17,6 +17,9 @@ class WebPageController extends Controller
     public $serverCartagena = 'http://www.sifinca.net/demoserver/web/app.php/';
     public $serverMonteria = 'http://www.sifinca.net/demoserver/web/app.php/';
 
+    // public $server = 'http://localhost/sifinca/web/app.php/';
+    // public $serverCartagena = 'http://localhost/sifinca/web/app.php/';
+    // public $serverMonteria = 'http://localhost/sifinca/web/app.php/';
 
 	public $user= "sifinca@araujoysegovia.com";
 	public $pass="araujo123";
@@ -75,6 +78,8 @@ class WebPageController extends Controller
 
         return $response;
 
+        
+
 
     }
 
@@ -83,20 +88,20 @@ class WebPageController extends Controller
         $validateAccess = $this->validateAccess();
 
         if($validateAccess){
+
             $request = Request::createFromGlobals();
 
             $json = $request->getContent();
             $data = json_decode($json,true);
 
 
-            //-----------------------------------------------------------------------------------------------------
-            //separar la letra del numero del inmueble para saber de que ciudad es 
+            //Separar la letra del numero del inmueble para saber de que ciudad es 
             $string = $data['property'];
             $dividir = explode('-',$string);
              
-             $city = null;
-             $carta = null;
-             $monte = null;
+            $city = null;
+            $carta = null;
+            $monte = null;
             foreach ($dividir as $k => $v) {
               if (preg_match('/([a-zA-Z])([0-9]+)/',$v,$matches)) {
                 $city = $matches[1];// = Letra
@@ -109,145 +114,149 @@ class WebPageController extends Controller
 
 
             if(is_null($city)){
-                return new JsonResponse(array('message'=> 'Ciudad de origen no valida'));
+                return new JsonResponse(array('message'=> 'Oportunidad no valida'));
             }
 
             if($city == 'C'){
                 $carta = ($this->server = $this->serverCartagena);
-                //print_r($carta);
             }
             if($city == 'M'){
                 $monte = ($this->server = $this->serverMonteria);
-                //print_r($monte);
             }
-
-            //-------------------------------------------------------------------------------------------------
-
-            //Crear oportunidad
-            $url = $this->server.'crm/main/oportunity';
-
-            $api = $this->SetupApi($url, $this->user, $this->pass);
-
-            $lead = $this->createLead($data);
 
             $oportunityType = $this->getOportunityType($data['oportunityType']);
 
-            $meansOfContact = $this->getMeansOfContact();
-            $responsable = $this->getResponsable();
+            $lead = $this->createLead($data);
 
-            $office = null;
-            if(!is_null($responsable)){
-                //print_r($responsable);
-                $office = $responsable['office'];
-            }
+            $opExist = $this->searchOportunity($lead, $oportunityType);
 
-            $bOportunity = array(
-                'lead' => $lead,
-                'oportunityType' => $oportunityType,
-                'meansOfContact' => $meansOfContact,
-                'responsable' => $responsable,
-                'office' => $office
-            );
+            if(is_null($opExist)){
 
-            //print_r($bOportunity);
+                //echo "\nCreando nueva oportunidad comercial\n";
 
-            if(is_null($lead)){
-                return new JsonResponse(array('message'=> 'Cliente no valido'));
-            }
+                //Crear oportunidad
+                $url = $this->server.'crm/main/oportunity';
 
-            if(is_null($oportunityType)){
-                return new JsonResponse(array('message'=> 'Tipo de oportunidad no valido'));
-            }
+                $api = $this->SetupApi($url, $this->user, $this->pass);
 
-            if(is_null($meansOfContact)){
-                return new JsonResponse(array('message'=> 'Medio de contacto no valido'));
-            }
+                $meansOfContact = $this->getMeansOfContact();
+                $responsable = $this->getResponsable();
 
-            if(is_null($responsable)){
-                return new JsonResponse(array('message'=> 'Responsable no valido'));
-            }
-            
-            //print_r($bOportunity);
-
-            $json = json_encode($bOportunity);
-
-
-            $result = $api->post($bOportunity);
-
-            // echo "\nresult";
-            // echo $result;
-            // print_r($result);
-
-            $result = json_decode($result, true);
-            
-            if(isset($result['success'])){
-                if($result['success'] == true){
-
-                    //echo "\nEntro aqui1\n";
-                    $sCont = $this->searchContador();
-
-                    if(!is_null($sCont)){
-                        $cont = $sCont['cont'];
-                    }else{
-                        $cont = 0;
-                    }
-
-                    $cont = $cont + 1;
-
-                    $bAssignment = array(
-                        "cont" => $cont
-                    );
-
-                    if(isset($sCont['id'])){
-
-                        $url = $this->server.'admin/sifinca/assignment/'.$sCont['id'];
-
-                        //echo "\n".$url."\n";
-
-                        $api = $this->SetupApi($url, $this->user, $this->pass);
-
-
-                        $result2 = $api->put($bAssignment);
-
-                        //print_r($result2);
-
-                    }
-               
-
-                     //print_r($result);
-                    //aqui llamar funcion crear requerimiento
-                    foreach ($result['data'] as $key => $value) {
-                        //print_r($value);
-                        $idOportunity = $value['id'];
-
-                        // echo "hola q tal";
-                        // print_r($idOportunity);
-
-                        //$lead = $this->createLead($data);
-
-                        //echo "\nconsecutive: ".$consecutive;
-                        $requirement = $this->createRequirement($idOportunity,$consecutive);
-                        //echo "hasta aqui";
-                    }
-
+                $office = null;
+                if(!is_null($responsable)){
+                    //print_r($responsable);
+                    $office = $responsable['office'];
                 }
-            }
-           
-            if(is_array($result)){
+
+                $bOportunity = array(
+                    'lead' => $lead,
+                    'oportunityType' => $oportunityType,
+                    'meansOfContact' => $meansOfContact,
+                    'responsable' => $responsable,
+                    'office' => $office
+                );
+
+                //print_r($bOportunity);
+
+                if(is_null($lead)){
+                    return new JsonResponse(array('message'=> 'Cliente no valido'));
+                }
+
+                if(is_null($oportunityType)){
+                    return new JsonResponse(array('message'=> 'Tipo de oportunidad no valido'));
+                }
+
+                if(is_null($meansOfContact)){
+                    return new JsonResponse(array('message'=> 'Medio de contacto no valido'));
+                }
+
+                if(is_null($responsable)){
+                    return new JsonResponse(array('message'=> 'Responsable no valido'));
+                }
                 
+                //print_r($bOportunity);
+
+                $json = json_encode($bOportunity);
+
+
+                $result = $api->post($bOportunity);
+
+                // echo "\nresult";
+                // echo $result;
+                // print_r($result);
+
+                $result = json_decode($result, true);
                 
+                if(isset($result['success'])){
+                    if($result['success'] == true){
+
+                        //echo "\nEntro aqui1\n";
+                        $sCont = $this->searchContador();
+
+                        if(!is_null($sCont)){
+                            $cont = $sCont['cont'];
+                        }else{
+                            $cont = 0;
+                        }
+
+                        $cont = $cont + 1;
+
+                        $bAssignment = array(
+                            "cont" => $cont
+                        );
+
+                        if(isset($sCont['id'])){
+
+                            $url = $this->server.'admin/sifinca/assignment/'.$sCont['id'];
+
+                            //echo "\n".$url."\n";
+
+                            $api = $this->SetupApi($url, $this->user, $this->pass);
+
+
+                            $result2 = $api->put($bAssignment);
+
+                            //print_r($result2);
+
+                        }
+                   
+
+                         //print_r($result);
+                        //aqui llamar funcion crear requerimiento
+                        foreach ($result['data'] as $key => $value) {
+                            //print_r($value);
+                            $idOportunity = $value['id'];
+
+                            $requirement = $this->createRequirement($idOportunity,$consecutive);
+
+                        }
+
+                    }
+                }
                
-                //return new JsonResponse($result);
-                return new JsonResponse(array());
+                if(is_array($result)){
+                                   
+                    return new JsonResponse($result);
+                    //return new JsonResponse(array());
 
+                }else{
+                    return new Response($result);
+                }
             }else{
-                return new Response($result);
+                //return new JsonResponse(array('message'=> 'El cliente ya tiene una oportunidad en curso'));
+
+                //echo "\nActualizando oportunidad\n";
+                $this->createRequirement($opExist['id'], $consecutive);
+                $this->createOffered($opExist['id'],$consecutive);
+
+                return new JsonResponse(array('message'=> 'Requerimiento agregado'));
+
             }
 
+           
         }else{
             return new JsonResponse(array('message'=> 'Accesso denegado'));
         }
-
         
     }
 
@@ -292,6 +301,7 @@ class WebPageController extends Controller
         }
     }
 
+
     /**
     Crear ofrecido de la oportunidad
     */
@@ -312,8 +322,9 @@ class WebPageController extends Controller
 
             $url = $this->server.'crm/main/oportunity/add/property/offered/'.$idOportunity;
 
-            echo "\n".$url."\n";
-            print_r(json_encode($bRequirement));
+            // echo "\n".$url."\n";
+            // print_r(json_encode($bRequirement));
+            // print_r(json_encode($bRequirement));
 
             $api = $this->SetupApi($url, $this->user, $this->pass);
 
@@ -326,7 +337,102 @@ class WebPageController extends Controller
             if(isset($result['success'])){
                 if($result['success'] == 1 || $result['success'] == true){
 
-                    echo "\n Inmuebles ofrecido creado\n";
+                    $comment = $this->createComment($idOportunity,$consecutive);
+
+                }
+            }else{
+                //print_r($result);
+            }
+
+        }
+    }
+
+    /**
+    Crear comentario de la oportunidad
+    */
+    public function createComment($idOportunity, $consecutive){
+
+        
+        $property = $this->searchProperty($consecutive);
+
+         if(!is_null($property)){
+
+             $properties = array();
+             $properties[] = $property;
+
+            //print_r($properties);
+
+            $bComment = array(
+               'comment' => '<p>Esta oportunidad fue creada desde: http://www.araujoysegovia.com</p>',
+               'idEntity' => $idOportunity,
+               'lastCommentDate' => 'true'
+            );
+
+            $url = $this->server.'crm/main/oportunity/comment/'.$idOportunity;
+            //print_r(json_decode($bComment));
+            //print_r(json_encode($bComment));
+
+            $api = $this->SetupApi($url, $this->user, $this->pass);
+
+            $result = $api->post($bComment);
+
+            $result = json_decode($result, true);
+            
+
+
+            
+
+            if(isset($result['success'])){
+                if($result['success'] == 1 || $result['success'] == true){
+
+                    echo "\n Comment creado\n";
+                 print_r("hola que tal 2");
+
+
+                    //$offered = $this->createOffered($idOportunity,$consecutive);
+                }
+            }else{
+                //print_r($result);
+            }
+
+        }
+    }
+
+    public function createParticipant($idOportunity, $consecutive){
+
+        
+        $property = $this->searchProperty($consecutive);
+
+         if(!is_null($property)){
+
+             $properties = array();
+             $properties[] = $property;
+
+            //print_r($properties);
+
+            $bParticipant = array(
+               // 'properties' => $properties
+            );
+
+            $url = $this->server.'crm/main/oportunity/comment/participant/'.$idOportunity;
+            print_r($url);
+
+            $api = $this->SetupApi($url, $this->user, $this->pass);
+
+            $result = $api->post($bParticipant);
+
+            $result = json_decode($result, true);
+
+            
+
+            if(isset($result['success'])){
+                if($result['success'] == 1 || $result['success'] == true){
+
+                    echo "\n Participant creado\n";
+                 print_r("hola que tal 3");
+
+
+                    //$offered = $this->createOffered($idOportunity,$consecutive);
                 }
             }else{
                 //print_r($result);
@@ -646,6 +752,59 @@ class WebPageController extends Controller
     }
 
     /**
+     * Buscar si el cliente tiene una oportunidad en curso
+     */
+    public function searchOportunity($lead, $opType)
+    {
+        
+        //print_r($lead);
+
+        $oportunity = null;
+
+        $fl = array(
+            'value' => $lead['id'],
+            'operator' => 'equal',
+            'property' => 'lead.id'
+        );
+
+        $fs = array(
+            'value' => 'E',
+            'operator' => 'equal',
+            'property' => 'state.value'
+        );
+
+        $ft = array(
+            'value' => $opType,
+            'operator' => 'equal',
+            'property' => 'oportunityType.value'
+        );
+
+        $filter[] = $fl;
+        $filter[] = $fs;
+
+        //print_r($filter);
+
+        $filter = json_encode($filter);
+    
+        $url = $this->server.'crm/main/oportunity?filter='.$filter;
+    
+        //echo "\n".$url."\n";
+
+        $api = $this->SetupApi($url, $this->user, $this->pass);
+    
+        $result = $api->get();
+        $result = json_decode($result, true);
+
+        //print_r($result);
+
+        if($result['total'] > 0){
+            $oportunity =  $result['data'][0];
+        }
+
+        return $oportunity;
+    }
+
+    /**
      * Eliminar espacios en blanco seguidos
      * @param unknown $string
      * @return unknown
@@ -658,84 +817,83 @@ class WebPageController extends Controller
     }
 
     public function login() {
-    	 
-    	if(is_null($this->token)){
+         
+        if(is_null($this->token)){
     
-    		//echo "\nEntro a login\n";
+            //echo "\nEntro a login\n";
     
-    		$url= $this->server."login";
-    		$headers = array(
-    				'Accept: application/json',
-    				'Content-Type: application/json',
-    		);
-    		 
-    		$a = new api($url, $headers);
-    			
+            $url= $this->server."login";
+            $headers = array(
+                    'Accept: application/json',
+                    'Content-Type: application/json',
+            );
+             
+            $a = new api($url, $headers);
+                
             //print_r($a);
     
-    		$result = $a->post(array("user"=>$this->user,"password"=>$this->pass));
-    		
+            $result = $a->post(array("user"=>$this->user,"password"=>$this->pass));
+            
             //print_r($result);
 
             $result = json_decode($result, true);
-    		 
-    		
+             
+            
     
-    		//echo "\n".$result['id']."\n";
+            //echo "\n".$result['id']."\n";
     
     
-    		if(isset($result['code'])){
-    			if($result['code'] == 401){
+            if(isset($result['code'])){
+                if($result['code'] == 401){
     
-    				$this->login();
-    			}
-    		}else{
+                    $this->login();
+                }
+            }else{
     
-    			if(isset($result['id'])){
+                if(isset($result['id'])){
     
-    				$this->token = $result['id'];
-    			}else{
-    				echo "\nError en el login\n";
-    				$this->token = null;
-    			}
+                    $this->token = $result['id'];
+                }else{
+                    echo "\nError en el login\n";
+                    $this->token = null;
+                }
     
-    		}
-    	}    	 
+            }
+        }        
     }
     
     public function SetupApi($urlapi,$user,$pass){
     
-    	$headers = array(
-    			'Accept: application/json',
-    			'Content-Type: application/json',
-    	);
+        $headers = array(
+                'Accept: application/json',
+                'Content-Type: application/json',
+        );
     
-    	$a = new api($urlapi, $headers);
+        $a = new api($urlapi, $headers);
     
-    	$this->login();
-    	 
-    	if(!is_null($this->token)){
+        $this->login();
+         
+        if(!is_null($this->token)){
     
-    		$headers = array(
-    				'Accept: application/json',
-    				'Content-Type: application/json',
-    				//'x-sifinca: SessionToken SessionID="56cf041b296351db058b456e", Username="lrodriguez@araujoysegovia.net"'
-    				'x-sifinca: SessionToken SessionID="'.$this->token.'", Username="'.$this->user.'"',
-    		);
+            $headers = array(
+                    'Accept: application/json',
+                    'Content-Type: application/json',
+                    //'x-sifinca: SessionToken SessionID="56cf041b296351db058b456e", Username="lrodriguez@araujoysegovia.net"'
+                    'x-sifinca: SessionToken SessionID="'.$this->token.'", Username="'.$this->user.'"',
+            );
     
-    		//     	print_r($headers);
+            //      print_r($headers);
     
-    		$a->set(array('url'=>$urlapi,'headers'=>$headers));
+            $a->set(array('url'=>$urlapi,'headers'=>$headers));
     
-    		//print_r($a);
+            //print_r($a);
     
-    		return $a;
+            return $a;
     
-    	}else{
-    		echo "\nToken no valido\n";
-    	}  
+        }else{
+            echo "\nToken no valido\n";
+        }  
     }
-      
 
 
 }
