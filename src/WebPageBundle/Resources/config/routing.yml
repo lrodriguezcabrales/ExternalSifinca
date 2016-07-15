@@ -2,7 +2,12 @@ web_page_homepage:
     path:     /
     defaults: { _controller: WebPageBundle:Default:index }
 
+generate_access_token:
+    path: web/access/token
+    defaults: { _controller: WebPageBundle:Default:generateAccessToken }
+    methods:  [GET]
+
 web_oportunity:
     path: web/oportunity
-    defaults: { _controller: WebPageBundle:Default:createOportunity }
+    defaults: { _controller: WebPageBundle:WebPage:createOportunity }
     methods:  [GET, POST]
