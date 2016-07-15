@@ -594,14 +594,14 @@ class WebPageController extends Controller
     
         $url = $this->server.'crm/main/meansofcontact?filter='.$filter;
     
-        //echo "\n".$url."\n";
+        echo "\n".$url."\n";
 
         $api = $this->SetupApi($url, $this->user, $this->pass);
     
         $result = $api->get();
         $result = json_decode($result, true);
 
-       
+        print_r($result);
 
         if($result['total'] > 0){
             $meansOfContact = $result['data'][0];
