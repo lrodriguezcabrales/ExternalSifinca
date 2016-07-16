@@ -13,13 +13,13 @@ class WebPageController extends Controller
 {
 
 
- 	public $server = 'http://www.sifinca.net/demoserver/web/app.php/';
-    public $serverCartagena = 'http://www.sifinca.net/demoserver/web/app.php/';
-    public $serverMonteria = 'http://www.sifinca.net/demoserver/web/app.php/';
+ 	// public $server = 'http://www.sifinca.net/demoserver/web/app.php/';
+  //   public $serverCartagena = 'http://www.sifinca.net/demoserver/web/app.php/';
+  //   public $serverMonteria = 'http://www.sifinca.net/demoserver/web/app.php/';
 
-    // public $server = 'http://localhost/sifinca/web/app.php/';
-    // public $serverCartagena = 'http://localhost/sifinca/web/app.php/';
-    // public $serverMonteria = 'http://localhost/sifinca/web/app.php/';
+    public $server = 'http://localhost/sifinca/web/app.php/';
+    public $serverCartagena = 'http://localhost/sifinca/web/app.php/';
+    public $serverMonteria = 'http://localhost/sifinca/web/app.php/';
 
 	public $user= "sifinca@araujoysegovia.com";
 	public $pass="araujo123";
@@ -249,6 +249,9 @@ class WebPageController extends Controller
                 $this->createRequirement($opExist['id'], $consecutive);
                 $this->createOffered($opExist['id'],$consecutive);
 
+                $text = '<p>Requerimiento agregado, inmueble '.$consecutive.'</p>';
+                $this->createComment($opExist['id'], $consecutive, $text);
+
                 return new JsonResponse(array('message'=> 'Requerimiento agregado'));
 
             }
@@ -350,9 +353,12 @@ class WebPageController extends Controller
     /**
     Crear comentario de la oportunidad
     */
-    public function createComment($idOportunity, $consecutive){
+    public function createComment($idOportunity, $consecutive, $text = null){
 
-        
+        if(is_null($text)){
+            $text = '<p>Esta oportunidad fue creada desde: http://www.araujoysegovia.com</p>';
+        }
+
         $property = $this->searchProperty($consecutive);
 
          if(!is_null($property)){
@@ -363,7 +369,7 @@ class WebPageController extends Controller
             //print_r($properties);
 
             $bComment = array(
-               'comment' => '<p>Esta oportunidad fue creada desde: http://www.araujoysegovia.com</p>',
+               'comment' => $text,
                'idEntity' => $idOportunity,
                'lastCommentDate' => 'true'
             );
@@ -385,8 +391,8 @@ class WebPageController extends Controller
             if(isset($result['success'])){
                 if($result['success'] == 1 || $result['success'] == true){
 
-                    echo "\n Comment creado\n";
-                 print_r("hola que tal 2");
+                 //    echo "\n Comment creado\n";
+                 // print_r("hola que tal 2");
 
 
                     //$offered = $this->createOffered($idOportunity,$consecutive);
@@ -415,7 +421,7 @@ class WebPageController extends Controller
             );
 
             $url = $this->server.'crm/main/oportunity/comment/participant/'.$idOportunity;
-            print_r($url);
+            //print_r($url);
 
             $api = $this->SetupApi($url, $this->user, $this->pass);
 
@@ -428,8 +434,8 @@ class WebPageController extends Controller
             if(isset($result['success'])){
                 if($result['success'] == 1 || $result['success'] == true){
 
-                    echo "\n Participant creado\n";
-                 print_r("hola que tal 3");
+                 //    echo "\n Participant creado\n";
+                 // print_r("hola que tal 3");
 
 
                     //$offered = $this->createOffered($idOportunity,$consecutive);
@@ -602,10 +608,12 @@ class WebPageController extends Controller
         $result = json_decode($result, true);
 
         //print_r($result);
-
-        if($result['total'] > 0){
-            $meansOfContact = $result['data'][0];
+        if(isset($result['total'])){
+            if($result['total'] > 0){
+                $meansOfContact = $result['data'][0];
+            }
         }
+       
 
         return $meansOfContact; 
     }
