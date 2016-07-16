@@ -249,6 +249,7 @@ class WebPageController extends Controller
                 $this->createRequirement($opExist['id'], $consecutive);
                 $this->createOffered($opExist['id'],$consecutive);
 
+                //Crear comentario de actualización
                 $text = '<p>Requerimiento agregado, inmueble '.$consecutive.'</p>';
                 $this->createComment($opExist['id'], $consecutive, $text);
 
