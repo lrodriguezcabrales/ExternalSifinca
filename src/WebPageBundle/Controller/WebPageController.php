@@ -679,6 +679,7 @@ class WebPageController extends Controller
         );
 
         //print_r($filter);
+        
         $filter = json_encode(array($filter));
     
         $url = $this->server.'crm/main/campaing?filter='.$filter;
