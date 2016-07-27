@@ -25,12 +25,10 @@ class WebPageController extends Controller
 	public $pass="araujo123";
 	public $token = null;	
 
-
     public function indexAction()
     {
         return $this->render('WebPageBundle:Default:index.html.twig');
     }
-
 
     public function validateAccess(){
         
