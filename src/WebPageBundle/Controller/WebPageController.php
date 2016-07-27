@@ -157,6 +157,7 @@ class WebPageController extends Controller
                 $api = $this->SetupApi($url, $this->user, $this->pass);
 
                 $meansOfContact = $this->getMeansOfContact();
+                $campaing = $this->getCampaing($data['campaing']);
                 $responsable = $this->getResponsable();
 
                 $office = null;
@@ -170,10 +171,13 @@ class WebPageController extends Controller
                     'oportunityType' => $oportunityType,
                     'meansOfContact' => $meansOfContact,
                     'responsable' => $responsable,
-                    'office' => $office
+                    'office' => $office,
+                    'campaing' => $campaing
                 );
 
-                //print_r($bOportunity);
+                
+                // print_r("aqui->>");
+                // print_r($bOportunity);
 
                 if(is_null($lead)){
                     return new JsonResponse(array('message'=> 'Cliente no valido'));
@@ -355,12 +359,12 @@ class WebPageController extends Controller
                 'project' => $properties
             );
 
-            echo "\n".json_encode($bRequirementProject)."\n";
+            //echo "\n".json_encode($bRequirementProject)."\n";
             //print_r($bRequirementProject);
 
             $url = $this->server.'crm/main/oportunity/save/requirement/'.$idOportunity;
 
-            print_r($url);
+           // print_r($url);
 
             $api = $this->SetupApi($url, $this->user, $this->pass);
 
@@ -658,6 +662,41 @@ class WebPageController extends Controller
 
         return $oportunityType;
 
+    }
+
+    /**
+     * Obtener campaña
+     */
+    public function getCampaing($camp)
+    {
+
+        $campaing = null;
+         
+        $filter = array(
+                'value' => $camp,
+                'operator' => 'equal',
+                'property' => 'name'
+        );
+
+        //print_r($filter);
+        $filter = json_encode(array($filter));
+    
+        $url = $this->server.'crm/main/campaing?filter='.$filter;
+    
+        //echo "\n".$url."\n";
+
+        $api = $this->SetupApi($url, $this->user, $this->pass);
+    
+        $result = $api->get();
+        $result = json_decode($result, true);
+
+        //print_r($result);
+
+        if($result['total'] > 0){
+            $campaing = $result['data'][0];
+        }
+
+        return $campaing; 
     }
 
     /**
