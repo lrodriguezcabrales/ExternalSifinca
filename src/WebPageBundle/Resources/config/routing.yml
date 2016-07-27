@@ -10,4 +10,4 @@ generate_access_token:
 web_oportunity:
     path: web/oportunity
     defaults: { _controller: WebPageBundle:WebPage:createOportunity }
-    methods:  [GET, POST]
+    methods:  [POST, OPTIONS]

@@ -13,13 +13,13 @@ class WebPageController extends Controller
 {
 
 
- 	// public $server = 'http://www.sifinca.net/demoserver/web/app.php/';
-  //   public $serverCartagena = 'http://www.sifinca.net/demoserver/web/app.php/';
-  //   public $serverMonteria = 'http://www.sifinca.net/demoserver/web/app.php/';
+ 	public $server = 'http://www.sifinca.net/demoserver/web/app.php/';
+    public $serverCartagena = 'http://www.sifinca.net/demoserver/web/app.php/';
+    public $serverMonteria = 'http://www.sifinca.net/demoserver/web/app.php/';
 
-    public $server = 'http://localhost/sifinca/web/app.php/';
-    public $serverCartagena = 'http://localhost/sifinca/web/app.php/';
-    public $serverMonteria = 'http://localhost/sifinca/web/app.php/';
+    // public $server = 'http://localhost/sifinca/web/app.php/';
+    // public $serverCartagena = 'http://localhost/sifinca/web/app.php/';
+    // public $serverMonteria = 'http://localhost/sifinca/web/app.php/';
 
 	public $user= "sifinca@araujoysegovia.com";
 	public $pass="araujo123";
@@ -289,13 +289,9 @@ class WebPageController extends Controller
 
             $result = json_decode($result, true);
 
-            
-
             if(isset($result['success'])){
                 if($result['success'] == 1 || $result['success'] == true){
-
                     //echo "\n requirement creado\n";
-
                     $offered = $this->createOffered($idOportunity,$consecutive);
                 }
             }else{
