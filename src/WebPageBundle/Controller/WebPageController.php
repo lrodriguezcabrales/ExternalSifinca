@@ -13,13 +13,13 @@ class WebPageController extends Controller
 {
 
 
- 	// public $server = 'http://www.sifinca.net/demoserver/web/app.php/';
-  //   public $serverCartagena = 'http://www.sifinca.net/demoserver/web/app.php/';
-  //   public $serverMonteria = 'http://www.sifinca.net/demoserver/web/app.php/';
+ 	public $server = 'http://www.sifinca.net/demoserver/web/app.php/';
+    public $serverCartagena = 'http://www.sifinca.net/demoserver/web/app.php/';
+    public $serverMonteria = 'http://www.sifinca.net/demoserver/web/app.php/';
 
-    public $server = 'http://localhost/sifinca/web/app.php/';
-    public $serverCartagena = 'http://localhost/sifinca/web/app.php/';
-    public $serverMonteria = 'http://localhost/sifinca/web/app.php/';
+    // public $server = 'http://localhost/sifinca/web/app.php/';
+    // public $serverCartagena = 'http://localhost/sifinca/web/app.php/';
+    // public $serverMonteria = 'http://localhost/sifinca/web/app.php/';
 
 	public $user= "sifinca@araujoysegovia.com";
 	public $pass="araujo123";
@@ -106,8 +106,6 @@ class WebPageController extends Controller
                 $dividir = explode('-',$string);
                  
                 $city = null;
-                $carta = null;
-                $monte = null;
                 foreach ($dividir as $k => $v) {
                   if (preg_match('/([a-zA-Z])([0-9]+)/',$v,$matches)) {
                     $city = $matches[1];// = Letra
@@ -124,10 +122,10 @@ class WebPageController extends Controller
                 }
 
                 if($city == 'C'){
-                    $carta = ($this->server = $this->serverCartagena);
+                    $this->server = $this->serverCartagena;
                 }
                 if($city == 'M'){
-                    $monte = ($this->server = $this->serverMonteria);
+                    $this->server= $this->serverMonteria;
                 }
             }else{
                 if (!is_null($data['project'])) {
