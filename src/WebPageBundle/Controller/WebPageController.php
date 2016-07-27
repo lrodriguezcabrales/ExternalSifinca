@@ -13,13 +13,13 @@ class WebPageController extends Controller
 {
 
 
- 	public $server = 'http://www.sifinca.net/demoserver/web/app.php/';
-    public $serverCartagena = 'http://www.sifinca.net/demoserver/web/app.php/';
-    public $serverMonteria = 'http://www.sifinca.net/demoserver/web/app.php/';
+ 	// public $server = 'http://www.sifinca.net/demoserver/web/app.php/';
+  //   public $serverCartagena = 'http://www.sifinca.net/demoserver/web/app.php/';
+  //   public $serverMonteria = 'http://www.sifinca.net/demoserver/web/app.php/';
 
-    // public $server = 'http://localhost/sifinca/web/app.php/';
-    // public $serverCartagena = 'http://localhost/sifinca/web/app.php/';
-    // public $serverMonteria = 'http://localhost/sifinca/web/app.php/';
+    public $server = 'http://localhost/sifinca/web/app.php/';
+    public $serverCartagena = 'http://localhost/sifinca/web/app.php/';
+    public $serverMonteria = 'http://localhost/sifinca/web/app.php/';
 
 	public $user= "sifinca@araujoysegovia.com";
 	public $pass="araujo123";
@@ -94,35 +94,52 @@ class WebPageController extends Controller
             $json = $request->getContent();
             $data = json_decode($json,true);
 
+           // print_r($data);
+            $oportuTypeProper = $data['property'];
+            $oportuTypeProject = $data['project'];
 
-            //Separar la letra del numero del inmueble para saber de que ciudad es 
-            $string = $data['property'];
-            $dividir = explode('-',$string);
-             
-            $city = null;
-            $carta = null;
-            $monte = null;
-            foreach ($dividir as $k => $v) {
-              if (preg_match('/([a-zA-Z])([0-9]+)/',$v,$matches)) {
-                $city = $matches[1];// = Letra
-                //$matches[1]; 
+            if(!is_null($oportuTypeProper)){
 
-                $consecutive = $matches[2]; // = Numero
+                //print_r("aqui es property");
+                //Separar la letra del numero del inmueble para saber de que ciudad es 
+                $string = $data['property'];
+                $dividir = explode('-',$string);
+                 
+                $city = null;
+                $carta = null;
+                $monte = null;
+                foreach ($dividir as $k => $v) {
+                  if (preg_match('/([a-zA-Z])([0-9]+)/',$v,$matches)) {
+                    $city = $matches[1];// = Letra
+                    //$matches[1]; 
 
-              }
+                    $consecutive = $matches[2]; // = Numero
+
+                  }
+                }
+
+
+                if(is_null($city)){
+                    return new JsonResponse(array('message'=> 'Oportunidad no valida'));
+                }
+
+                if($city == 'C'){
+                    $carta = ($this->server = $this->serverCartagena);
+                }
+                if($city == 'M'){
+                    $monte = ($this->server = $this->serverMonteria);
+                }
+            }else{
+                if (!is_null($data['project'])) {
+                    # code...
+                    $consecutive = $oportuTypeProject;
+                    //print_r("hola que tal proyecto = ");
+                    //print_r($consecutive);
+
+
+                }
             }
 
-
-            if(is_null($city)){
-                return new JsonResponse(array('message'=> 'Oportunidad no valida'));
-            }
-
-            if($city == 'C'){
-                $carta = ($this->server = $this->serverCartagena);
-            }
-            if($city == 'M'){
-                $monte = ($this->server = $this->serverMonteria);
-            }
 
             $oportunityType = $this->getOportunityType($data['oportunityType']);
 
@@ -132,7 +149,7 @@ class WebPageController extends Controller
 
             if(is_null($opExist)){
 
-                //echo "\nCreando nueva oportunidad comercial\n";
+                echo "\nCreando nueva oportunidad comercial\n";
 
                 //Crear oportunidad
                 $url = $this->server.'crm/main/oportunity';
@@ -140,6 +157,7 @@ class WebPageController extends Controller
                 $api = $this->SetupApi($url, $this->user, $this->pass);
 
                 $meansOfContact = $this->getMeansOfContact();
+                $campaing = $this->getCampaing($data['campaing']);
                 $responsable = $this->getResponsable();
 
                 $office = null;
@@ -153,10 +171,13 @@ class WebPageController extends Controller
                     'oportunityType' => $oportunityType,
                     'meansOfContact' => $meansOfContact,
                     'responsable' => $responsable,
-                    'office' => $office
+                    'office' => $office,
+                    'campaing' => $campaing
                 );
 
-                //print_r($bOportunity);
+                
+                // print_r("aqui->>");
+                // print_r($bOportunity);
 
                 if(is_null($lead)){
                     return new JsonResponse(array('message'=> 'Cliente no valido'));
@@ -220,24 +241,32 @@ class WebPageController extends Controller
 
                         }
                    
+                        if(!is_null($oportuTypeProper)){
 
-                         //print_r($result);
-                        //aqui llamar funcion crear requerimiento
-                        foreach ($result['data'] as $key => $value) {
-                            //print_r($value);
-                            $idOportunity = $value['id'];
+                             //print_r($result);
+                            //aqui llamar funcion crear requerimiento
+                            foreach ($result['data'] as $key => $value) {
+                                //print_r($value);
+                                $idOportunity = $value['id'];
 
-                            $requirement = $this->createRequirement($idOportunity,$consecutive);
+                                $requirement = $this->createRequirement($idOportunity,$consecutive);
 
+                            }
                         }
+                            foreach ($result['data'] as $key => $value) {
+                                //print_r($value);
+                                $idOportunity = $value['id'];
+                                $requirement = $this->createRequirementProject($idOportunity,$consecutive);
+                                return new JsonResponse(array('message'=> 'Requerimiento nuevo agregado'));
+                            }
 
                     }
                 }
                
                 if(is_array($result)){
                                    
-                    return new JsonResponse($result);
-                    //return new JsonResponse(array());
+                    //return new JsonResponse($result);
+                    return new JsonResponse(array());
 
                 }else{
                     return new Response($result);
@@ -246,14 +275,30 @@ class WebPageController extends Controller
                 //return new JsonResponse(array('message'=> 'El cliente ya tiene una oportunidad en curso'));
 
                 //echo "\nActualizando oportunidad\n";
-                $this->createRequirement($opExist['id'], $consecutive);
-                $this->createOffered($opExist['id'],$consecutive);
+                if(!is_null($oportuTypeProper)){
+                    //print_r($opExist);
+                    $this->createRequirement($opExist['id'], $consecutive);
+                    $this->createOffered($opExist['id'],$consecutive);
 
+                    //Crear comentario de actualización
+                    $text = '<p>Requerimiento agregado, inmueble '.$consecutive.'</p>';
+                    $this->createComment($opExist['id'], $consecutive, $text);
+
+                    return new JsonResponse(array('message'=> 'Requerimiento agregado'));
+                }
+
+                
+
+
+                //Cuando es de proyecto
+                $this->createRequirementProject($opExist['id'], $consecutive);
                 //Crear comentario de actualización
-                $text = '<p>Requerimiento agregado, inmueble '.$consecutive.'</p>';
+                $text = '<p>Requerimiento agregado, proyect '.$consecutive.'</p>';
                 $this->createComment($opExist['id'], $consecutive, $text);
 
+
                 return new JsonResponse(array('message'=> 'Requerimiento agregado'));
+
 
             }
 
@@ -265,7 +310,7 @@ class WebPageController extends Controller
     }
 
     /**
-     * Crear requerimiento de la oportunidad
+     * Crear requerimiento de la oportunidad para property
      */
     public function createRequirement($idOportunity, $consecutive){
 
@@ -291,7 +336,9 @@ class WebPageController extends Controller
 
             if(isset($result['success'])){
                 if($result['success'] == 1 || $result['success'] == true){
+
                     //echo "\n requirement creado\n";
+
                     $offered = $this->createOffered($idOportunity,$consecutive);
                 }
             }else{
@@ -300,6 +347,56 @@ class WebPageController extends Controller
 
         }
     }
+
+    /**
+     * Crear requerimiento de la oportunidad de proyecto
+     */
+    public function createRequirementProject($idOportunity, $consecutive){
+
+        
+        $project = $this->searchProject($consecutive);
+        // print_r("aqui jjjj -->");
+        // print_r($project);
+
+        if(!is_null($project)){
+
+            $properties = array();
+            $properties[] = $project;
+
+            $bRequirementProject = array(
+                'project' => $properties
+            );
+
+            //echo "\n".json_encode($bRequirementProject)."\n";
+            //print_r($bRequirementProject);
+
+            $url = $this->server.'crm/main/oportunity/save/requirement/'.$idOportunity;
+
+           // print_r($url);
+
+            $api = $this->SetupApi($url, $this->user, $this->pass);
+
+            $result = $api->post($bRequirementProject);
+
+            $result = json_decode($result, true);
+
+            
+
+            if(isset($result['success'])){
+                if($result['success'] == 1 || $result['success'] == true){
+
+                    echo "\n requirement creado aqui\n";
+
+                    //$offered = $this->createOffered($idOportunity,$consecutive);
+                    $comment = $this->createComment($idOportunity,$consecutive);
+                }
+            }else{
+                    print_r($result);
+            }
+
+        }
+    }
+
 
 
     /**
@@ -381,66 +478,6 @@ class WebPageController extends Controller
 
             $result = json_decode($result, true);
             
-
-
-            
-
-            if(isset($result['success'])){
-                if($result['success'] == 1 || $result['success'] == true){
-
-                 //    echo "\n Comment creado\n";
-                 // print_r("hola que tal 2");
-
-
-                    //$offered = $this->createOffered($idOportunity,$consecutive);
-                }
-            }else{
-                //print_r($result);
-            }
-
-        }
-    }
-
-    public function createParticipant($idOportunity, $consecutive){
-
-        
-        $property = $this->searchProperty($consecutive);
-
-         if(!is_null($property)){
-
-             $properties = array();
-             $properties[] = $property;
-
-            //print_r($properties);
-
-            $bParticipant = array(
-               // 'properties' => $properties
-            );
-
-            $url = $this->server.'crm/main/oportunity/comment/participant/'.$idOportunity;
-            //print_r($url);
-
-            $api = $this->SetupApi($url, $this->user, $this->pass);
-
-            $result = $api->post($bParticipant);
-
-            $result = json_decode($result, true);
-
-            
-
-            if(isset($result['success'])){
-                if($result['success'] == 1 || $result['success'] == true){
-
-                 //    echo "\n Participant creado\n";
-                 // print_r("hola que tal 3");
-
-
-                    //$offered = $this->createOffered($idOportunity,$consecutive);
-                }
-            }else{
-                //print_r($result);
-            }
-
         }
     }
 
@@ -543,7 +580,6 @@ class WebPageController extends Controller
     public function getOportunityType($opType)
     {
 
-        //echo "\nEntro 5\n";
         $oportunityType = null;
 
        //echo "\n".$opType."\n";
@@ -554,7 +590,7 @@ class WebPageController extends Controller
                 'property' => 'value'
         );
 
-        //print_r($filter);
+       // print_r($filter);
 
         $filter = json_encode(array($filter));
     
@@ -576,6 +612,42 @@ class WebPageController extends Controller
 
         return $oportunityType;
 
+    }
+
+    /**
+     * Obtener campaña
+     */
+    public function getCampaing($camp)
+    {
+
+        $campaing = null;
+         
+        $filter = array(
+                'value' => $camp,
+                'operator' => 'equal',
+                'property' => 'name'
+        );
+
+        //print_r($filter);
+        
+        $filter = json_encode(array($filter));
+    
+        $url = $this->server.'crm/main/campaing?filter='.$filter;
+    
+        //echo "\n".$url."\n";
+
+        $api = $this->SetupApi($url, $this->user, $this->pass);
+    
+        $result = $api->get();
+        $result = json_decode($result, true);
+
+        //print_r($result);
+
+        if($result['total'] > 0){
+            $campaing = $result['data'][0];
+        }
+
+        return $campaing; 
     }
 
     /**
@@ -756,6 +828,42 @@ class WebPageController extends Controller
         return $property;
     }
 
+    public function searchProject($consecutive)
+    {
+        
+        $project = null;
+
+        $project = $this->cleanString($consecutive);
+
+        $filter = array(
+                'value' => $project,
+                'operator' => 'equal',
+                'property' => 'code'
+        );
+
+        //print_r($filter);
+
+        $filter = json_encode(array($filter));
+    
+        $url = $this->server.'project/main/project?filter='.$filter;
+    
+        //echo "\n".$url."\n";
+
+        $api = $this->SetupApi($url, $this->user, $this->pass);
+    
+        $result = $api->get();
+        $result = json_decode($result, true);
+
+        // echo "\nOportunityType\n";
+        //print_r($result);
+
+        if($result['total'] > 0){
+            $project = $result['data'][0];
+        }
+
+        return $project;
+    }
+
     /**
      * Buscar si el cliente tiene una oportunidad en curso
      */
@@ -779,21 +887,22 @@ class WebPageController extends Controller
         );
 
         $ft = array(
-            'value' => $opType,
+            'value' => $opType['value'],
             'operator' => 'equal',
             'property' => 'oportunityType.value'
         );
 
         $filter[] = $fl;
         $filter[] = $fs;
+        $filter[] = $ft;
 
-        //print_r($filter);
+       // print_r($filter);
 
         $filter = json_encode($filter);
     
         $url = $this->server.'crm/main/oportunity?filter='.$filter;
     
-        //echo "\n".$url."\n";
+       // echo "\n".$url."\n";
 
         $api = $this->SetupApi($url, $this->user, $this->pass);
     
